@@ -1,0 +1,140 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Board of Dashed Hopes</title>
+    <link rel="stylesheet" href="css/main.css">
+</head>
+<body>
+
+<div id="errors" style="display: none">
+
+</div>
+
+<div id="login" style="display: none">
+    <form action="#">
+        <span class="prompt">Username:</span><br>
+        <input type="text" name="username"><br>
+
+        <span class="prompt">Password:</span><br>
+        <input type="password" name="password"><br>
+
+        <input type="button" value="Log in" onclick="concourse.auth(this.form.username.value, this.form.password.value, onAuthSuccess)">
+    </form>
+</div>
+
+<div id="pipelines_failed">
+
+</div>
+<div id="pipelines_success">
+
+</div>
+
+
+<script type="application/javascript" src="js/concourse_client.js"></script>
+<script type="application/javascript">
+    function showError(messageHtml) {
+        var errors = document.getElementById("errors");
+        errors.style.display = "block";
+        errors.innerHTML = messageHtml;
+    }
+    function clearErrors() {
+        var errors = document.getElementById("errors");
+        errors.style.display = "none";
+        errors.innerHTML = "";
+    }
+    function onAuthSuccess() {
+        document.getElementById("login").style.display = "none";
+        refreshPipelineView();
+    }
+    function onAuthFailure(reason) {
+        showError(reason + " Please log in again.");
+        document.getElementById("login").style.display = "block";
+    }
+    function refreshPipelineView() {
+        console.log("Attempting to refresh pipeline view...");
+        concourse.getPipelines(function(pipelines) {
+            console.log("Got fresh pipeline data. Refreshing UI...");
+            clearErrors();
+
+            pipelines.sort(function(p1, p2) {
+                if (p1.newestFailureTime === p2.newestFailureTime) {
+                    return 0;
+                }
+                if (p1.newestFailureTime < p2.newestFailureTime) {
+                    return 1;
+                }
+                return -1;
+
+                // TODO sort next by newest running time
+
+                // TODO sort next by newest success time
+            });
+
+            var pdiv = document.getElementById("pipelines_failed");
+            for (var i = 0; i < pipelines.length; i++) {
+                var p = pipelines[i];
+                if (p.newestFailureTime === 0) {
+                    pdiv = document.getElementById("pipelines_success");
+                }
+                pdiv.appendChild(makePipelineDiv(p));
+            }
+        });
+    }
+    function makePipelineDiv(p) {
+        var div = document.createElement("div");
+        div.id = "pipeline-" + p.name;
+        div.className = "pipeline";
+        div.innerHTML = "<h1>" + p.name + "</h1>";
+
+        for (var i = 0; i < p.failingJobs.length; i++) {
+            var j = p.failingJobs[i];
+            var b = j["finished_build"];
+
+            var jdiv = document.createElement("div");
+            jdiv.id = "job-" + p.name + "-" + j.name;
+            jdiv.className = "job failing";
+            jdiv.innerHTML = "<h2>" + j.name + "</h2>Failed " + relativeTime(new Date(b["end_time"] * 1000));
+
+            div.appendChild(jdiv);
+        }
+
+        return div;
+    }
+    function relativeTime(then) {
+        var now = new Date();
+        var millis = now.getTime() - then.getTime();
+        var secs = Math.floor(millis / 1000);
+        var mins = Math.floor(secs / 60);
+        var hours = Math.floor(mins / 60);
+        var days = Math.floor(hours / 24);
+
+        if (days > 0) {
+            return pluralize(days, "day") + " ago";
+        }
+        if (hours > 0) {
+            return pluralize(hours, "hour", "an") + " ago";
+        }
+        if (mins > 0) {
+            return pluralize(mins, "minute") + " ago";
+        }
+        return "less than a minute ago";
+    }
+    function pluralize(val, str, article) {
+        if (article === undefined) {
+            article = "a";
+        }
+        if (val == 1) {
+            return article + " " + str;
+        }
+        return val + " " + str + "s";
+    }
+
+    window.onload = function() {
+        concourse.onAuthError = onAuthFailure;
+        refreshPipelineView();
+    }
+</script>
+
+</body>
+</html>

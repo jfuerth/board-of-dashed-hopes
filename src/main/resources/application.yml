@@ -1,0 +1,25 @@
+zuul:
+  routes:
+    concourse:
+      path: /concourse/**
+
+      # replace this with your concourse URL
+      url: https://ci.concourse.ci/
+
+      sensitiveHeaders: ""
+      stripPrefix: true
+  debug:
+    request: true
+
+server.port: 1313
+
+logging:
+  level:
+    com.netflix.zuul: DEBUG
+    org:
+      springframework:
+        web: DEBUG
+        http: DEBUG
+        cloud:
+          netflix:
+            zuul: DEBUG

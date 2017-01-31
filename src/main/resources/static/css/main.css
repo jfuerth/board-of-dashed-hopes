@@ -1,0 +1,70 @@
+body {
+  background-color: #111111;
+  color: #dddddd;
+  font-family: helvetica;
+}
+
+span.prompt {
+  font-size: 10px;
+}
+
+input[type=text], input[type=password] {
+  background-color: #2a2a2a;
+  color: #dddddd;
+  border: 1px solid #aaa;
+  margin-bottom: 10px;
+}
+
+#errors {
+    padding: 20px;
+    background: #e66;
+    border: 1px solid #d55;
+    border-radius: 5px;
+}
+
+div.pipeline {
+  background-color: #522;
+  border-radius: 10px;
+  padding: 10px;
+  margin-bottom: 5px;
+}
+
+div.pipeline h1 {
+  padding: 0;
+  margin-top: 0;
+  margin-bottom: 5px;
+}
+
+div.job {
+  display: inline-block;
+  background-color: #422;
+  border-radius: 10px;
+  padding: 10px;
+  margin: 4px;
+}
+
+div.job h2 {
+  padding: 0;
+  margin-top: 0;
+  margin-bottom: 5px;
+}
+
+#pipelines_failed {
+  background-color: #311;
+  border-radius: 10px;
+  padding: 10px;
+  margin: 4px;
+}
+
+#pipelines_success {
+  background-color: #262;
+  border-radius: 10px;
+  padding: 10px;
+  margin: 4px;
+}
+
+#pipelines_success div.pipeline {
+  background-color: #262;
+  margin: 4px;
+  display: inline-block;
+}
