@@ -71,22 +71,28 @@ function ConcourseClient(base_url) {
                 if (p.paused) { continue; }
 
                 xhrGet("/api/v1/teams/main/pipelines/" + encodeURIComponent(p.name) + "/jobs", function(jobs) {
-                    var failingJobs = [];
                     var newestFailureTime = 0;
+                    var newestRunningTime = 0;
                     for (var i = 0; i < jobs.length; i++) {
                         var job = jobs[i];
+
                         var finishedBuild = job["finished_build"];
                         if (finishedBuild != null) {
                             if (finishedBuild.status === "failed") {
                                 newestFailureTime = Math.max(newestFailureTime, finishedBuild["end_time"]);
-                                failingJobs.push(job);
                             }
+                        }
+
+                        var nextBuild = job["next_build"];
+                        if (nextBuild != null) {
+                            newestRunningTime = Math.max(newestRunningTime, nextBuild["start_time"]);
                         }
                     }
                     appendResult({
                         "name": p.name,
+                        "jobs": jobs,
                         "newestFailureTime": newestFailureTime,
-                        "failingJobs": failingJobs
+                        "newestRunningTime": newestRunningTime
                     });
                 });
             }

@@ -26,6 +26,9 @@
 <div id="pipelines_failed">
 
 </div>
+<div id="pipelines_running">
+
+</div>
 <div id="pipelines_success">
 
 </div>
@@ -58,24 +61,41 @@
             clearErrors();
 
             pipelines.sort(function(p1, p2) {
-                if (p1.newestFailureTime === p2.newestFailureTime) {
-                    return 0;
+                if (p1.newestFailureTime > 0 || p2.newestFailureTime > 0) {
+                    if (p1.newestFailureTime === p2.newestFailureTime) {
+                        return 0;
+                    }
+                    if (p1.newestFailureTime < p2.newestFailureTime) {
+                        return 1;
+                    }
+                    return -1;
                 }
-                if (p1.newestFailureTime < p2.newestFailureTime) {
-                    return 1;
-                }
-                return -1;
 
-                // TODO sort next by newest running time
+                if (p1.newestRunningTime > 0 || p2.newestRunningTime > 0) {
+                    if (p1.newestRunningTime === p2.newestRunningTime) {
+                        return 0;
+                    }
+                    if (p1.newestRunningTime < p2.newestRunningTime) {
+                        return 1;
+                    }
+                    return -1;
+                }
 
                 // TODO sort next by newest success time
+                return 0;
             });
 
-            var pdiv = document.getElementById("pipelines_failed");
+            var failedDiv = document.getElementById("pipelines_failed");
+            var runningDiv = document.getElementById("pipelines_running");
+            var successDiv = document.getElementById("pipelines_success");
+            var pdiv = failedDiv;
             for (var i = 0; i < pipelines.length; i++) {
                 var p = pipelines[i];
-                if (p.newestFailureTime === 0) {
-                    pdiv = document.getElementById("pipelines_success");
+                if (p.newestFailureTime === 0 && pdiv === failedDiv) {
+                    pdiv = runningDiv;
+                }
+                if (p.newestRunningTime === 0 && pdiv === runningDiv) {
+                    pdiv = successDiv;
                 }
                 pdiv.appendChild(makePipelineDiv(p));
             }
@@ -87,14 +107,26 @@
         div.className = "pipeline";
         div.innerHTML = "<h1>" + p.name + "</h1>";
 
-        for (var i = 0; i < p.failingJobs.length; i++) {
-            var j = p.failingJobs[i];
-            var b = j["finished_build"];
+        for (var i = 0; i < p.jobs.length; i++) {
+            var j = p.jobs[i];
+            var fb = j["finished_build"];
+            var nb = j["next_build"];
+
+            var styleClasses = "job";
+            var statusWithTime = "Never Ran";
+            if (fb != null) {
+                styleClasses += " " + fb.status;
+                statusWithTime = fb.status + " " + relativeTime(new Date(fb["end_time"] * 1000))
+            }
+            if (nb != null) {
+                styleClasses += " " + nb.status;
+                statusWithTime = fb.status + " " + relativeTime(new Date(nb["start_time"] * 1000))
+            }
 
             var jdiv = document.createElement("div");
             jdiv.id = "job-" + p.name + "-" + j.name;
-            jdiv.className = "job failing";
-            jdiv.innerHTML = "<h2>" + j.name + "</h2>Failed " + relativeTime(new Date(b["end_time"] * 1000));
+            jdiv.className = styleClasses;
+            jdiv.innerHTML = "<h2>" + j.name + "</h2>" + statusWithTime;
 
             div.appendChild(jdiv);
         }

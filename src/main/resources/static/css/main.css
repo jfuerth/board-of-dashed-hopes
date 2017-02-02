@@ -23,7 +23,7 @@ input[type=text], input[type=password] {
 }
 
 div.pipeline {
-  background-color: #522;
+  background-color: #461212;
   border-radius: 10px;
   padding: 10px;
   margin-bottom: 5px;
@@ -37,10 +37,24 @@ div.pipeline h1 {
 
 div.job {
   display: inline-block;
-  background-color: #422;
+  background-color: #444;
   border-radius: 10px;
   padding: 10px;
   margin: 4px;
+}
+
+div.job.failed {
+  background-color: #7b1d17;
+}
+
+div.job.succeeded {
+  background-color: #216121;
+}
+
+div.job.started {
+  border: 8px solid #f7d010;
+  animation: pulse 5s ease-in-out infinite;
+  /* transition: transform 0.2s; */
 }
 
 div.job h2 {
@@ -50,21 +64,33 @@ div.job h2 {
 }
 
 #pipelines_failed {
-  background-color: #311;
-  border-radius: 10px;
-  padding: 10px;
-  margin: 4px;
 }
 
 #pipelines_success {
   background-color: #262;
   border-radius: 10px;
   padding: 10px;
-  margin: 4px;
 }
 
 #pipelines_success div.pipeline {
   background-color: #262;
   margin: 4px;
   display: inline-block;
+}
+
+#pipelines_success div.job {
+  display: none;
+}
+
+@keyframes pulse {
+0% {
+  transform: scale(1);
+}
+
+65% {
+  transform: scale(1.05);
+}
+
+100% {
+  transform: scale(1);
 }
