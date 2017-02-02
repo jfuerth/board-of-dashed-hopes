@@ -17,13 +17,12 @@ input[type=text], input[type=password] {
 
 #errors {
     padding: 20px;
-    background: #e66;
-    border: 1px solid #d55;
+    background: #e82020;
+    border: 1px solid #ea0000;
     border-radius: 5px;
 }
 
 div.pipeline {
-  background-color: #461212;
   border-radius: 10px;
   padding: 10px;
   margin-bottom: 5px;
@@ -53,7 +52,7 @@ div.job.succeeded {
 
 div.job.started {
   border: 8px solid #f7d010;
-  animation: pulse 5s ease-in-out infinite;
+  animation: breathe 5s ease-in-out infinite;
   /* transition: transform 0.2s; */
 }
 
@@ -64,16 +63,28 @@ div.job h2 {
 }
 
 #pipelines_failed {
+  border-radius: 10px;
+  background-color: #461212;
+}
+
+#pipelines_failed div.pipeline {
+}
+
+#pipelines_running {
+  border-radius: 10px;
+  background-color: #6d5b13;
+}
+
+#pipelines_running div.pipeline {
 }
 
 #pipelines_success {
-  background-color: #262;
   border-radius: 10px;
+  background-color: #262;
   padding: 10px;
 }
 
 #pipelines_success div.pipeline {
-  background-color: #262;
   margin: 4px;
   display: inline-block;
 }
@@ -82,7 +93,7 @@ div.job h2 {
   display: none;
 }
 
-@keyframes pulse {
+@keyframes breathe {
 0% {
   transform: scale(1);
 }
