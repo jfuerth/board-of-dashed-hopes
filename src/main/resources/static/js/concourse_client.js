@@ -73,6 +73,7 @@ function ConcourseClient(base_url) {
                 xhrGet("/api/v1/teams/main/pipelines/" + encodeURIComponent(p.name) + "/jobs", function(jobs) {
                     var newestFailureTime = 0;
                     var newestRunningTime = 0;
+                    var newestSuccessTime = 0;
                     for (var i = 0; i < jobs.length; i++) {
                         var job = jobs[i];
 
@@ -80,6 +81,8 @@ function ConcourseClient(base_url) {
                         if (finishedBuild != null) {
                             if (finishedBuild.status === "failed") {
                                 newestFailureTime = Math.max(newestFailureTime, finishedBuild["end_time"]);
+                            } else if (finishedBuild.status === "succeeded") {
+                                newestSuccessTime = Math.max(newestSuccessTime, finishedBuild["end_time"]);
                             }
                         }
 
@@ -92,12 +95,11 @@ function ConcourseClient(base_url) {
                         "name": p.name,
                         "jobs": jobs,
                         "newestFailureTime": newestFailureTime,
-                        "newestRunningTime": newestRunningTime
+                        "newestRunningTime": newestRunningTime,
+                        "newestSuccessTime": newestSuccessTime
                     });
                 });
             }
         });
     }
 }
-
-var concourse = new ConcourseClient("/concourse");

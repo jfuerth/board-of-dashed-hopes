@@ -81,13 +81,28 @@
                     return -1;
                 }
 
-                // TODO sort next by newest success time
+                if (p1.newestSuccessTime > 0 || p2.newestSuccessTime > 0) {
+                    if (p1.newestSuccessTime === p2.newestSuccessTime) {
+                        return 0;
+                    }
+                    if (p1.newestSuccessTime < p2.newestSuccessTime) {
+                        return 1;
+                    }
+                    return -1;
+                }
+
                 return 0;
             });
 
             var failedDiv = document.getElementById("pipelines_failed");
+            failedDiv.innerHTML = "";
+
             var runningDiv = document.getElementById("pipelines_running");
+            runningDiv.innerHTML = "";
+
             var successDiv = document.getElementById("pipelines_success");
+            successDiv.innerHTML = "";
+
             var pdiv = failedDiv;
             for (var i = 0; i < pipelines.length; i++) {
                 var p = pipelines[i];
@@ -103,32 +118,43 @@
     }
     function makePipelineDiv(p) {
         var div = document.createElement("div");
-        div.id = "pipeline-" + p.name;
-        div.className = "pipeline";
-        div.innerHTML = "<h1>" + p.name + "</h1>";
+        var hasOldJob = false;
 
         for (var i = 0; i < p.jobs.length; i++) {
-            var j = p.jobs[i];
-            var fb = j["finished_build"];
-            var nb = j["next_build"];
+            let j = p.jobs[i];
+            let fb = j["finished_build"];
+            let nb = j["next_build"];
 
-            var styleClasses = "job";
-            var statusWithTime = "Never Ran";
+            let styleClasses = "job";
+            let statusWithTime = "Never Ran";
             if (fb != null) {
                 styleClasses += " " + fb.status;
                 statusWithTime = fb.status + " " + relativeTime(new Date(fb["end_time"] * 1000))
             }
             if (nb != null) {
                 styleClasses += " " + nb.status;
-                statusWithTime = fb.status + " " + relativeTime(new Date(nb["start_time"] * 1000))
+                statusWithTime = nb.status + " " + relativeTime(new Date(nb["start_time"] * 1000))
             }
 
-            var jdiv = document.createElement("div");
+            if (statusWithTime.indexOf("weeks") != -1) {
+                hasOldJob = true;
+            }
+
+            let jdiv = document.createElement("div");
             jdiv.id = "job-" + p.name + "-" + j.name;
             jdiv.className = styleClasses;
             jdiv.innerHTML = "<h2>" + j.name + "</h2>" + statusWithTime;
 
             div.appendChild(jdiv);
+        }
+
+        div.id = "pipeline-" + p.name;
+        div.innerHTML = "<h1>" + p.name + "</h1>";
+
+        if (hasOldJob) {
+            div.className = "pipeline old";
+        } else {
+            div.className = "pipeline";
         }
 
         return div;
@@ -140,7 +166,11 @@
         var mins = Math.floor(secs / 60);
         var hours = Math.floor(mins / 60);
         var days = Math.floor(hours / 24);
+        var weeks = Math.floor(days / 7);
 
+        if (weeks > 1) {
+            return pluralize(weeks, "week") + " ago";
+        }
         if (days > 0) {
             return pluralize(days, "day") + " ago";
         }
@@ -161,11 +191,15 @@
         }
         return val + " " + str + "s";
     }
-
     window.onload = function() {
         concourse.onAuthError = onAuthFailure;
-        refreshPipelineView();
+        var periodicRefresh = function() {
+            refreshPipelineView();
+            setTimeout(periodicRefresh, 5000);
+        }
+        periodicRefresh();
     }
+    var concourse = new ConcourseClient("/concourse");
 </script>
 
 </body>
