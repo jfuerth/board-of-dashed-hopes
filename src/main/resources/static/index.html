@@ -120,6 +120,9 @@
         var div = document.createElement("div");
         var hasOldJob = false;
 
+        div.id = "pipeline-" + p.name;
+        div.innerHTML = "<h1>" + p.name + "</h1>";
+
         for (var i = 0; i < p.jobs.length; i++) {
             let j = p.jobs[i];
             let fb = j["finished_build"];
@@ -147,9 +150,6 @@
 
             div.appendChild(jdiv);
         }
-
-        div.id = "pipeline-" + p.name;
-        div.innerHTML = "<h1>" + p.name + "</h1>";
 
         if (hasOldJob) {
             div.className = "pipeline old";
