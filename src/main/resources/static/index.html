@@ -134,7 +134,7 @@
                 styleClasses += " " + fb.status;
                 statusWithTime = fb.status + " " + relativeTime(new Date(fb["end_time"] * 1000))
                 if (fb.status === 'failed') {
-                    say(j.name + " " + statusWithTime, 60 * 5);
+                    say(p.name + " " + j.name + " " + statusWithTime, p.name + ":" + j.name, 60 * 60);
                 }
             }
             if (nb != null) {
@@ -194,13 +194,13 @@
         }
         return val + " " + str + "s";
     }
-    function say(words, minIntervalSeconds) {
+    function say(words, repeatKey, minIntervalSeconds) {
         if ('speechSynthesis' in window) {
             var now = Date.now();
-            var lastTime = window.localStorage.getItem(words);
+            var lastTime = window.localStorage.getItem(repeatKey);
             if (lastTime === undefined || (now - lastTime) > (minIntervalSeconds * 1000)) {
                 window.speechSynthesis.speak(new SpeechSynthesisUtterance(words));
-                window.localStorage.setItem(words, now);
+                window.localStorage.setItem(repeatKey, now);
             }
         } else {
             console.log("Couldn't say '" + words + "' because no speechSynthesis");
