@@ -133,6 +133,9 @@
             if (fb != null) {
                 styleClasses += " " + fb.status;
                 statusWithTime = fb.status + " " + relativeTime(new Date(fb["end_time"] * 1000))
+                if (fb.status === 'failed') {
+                    say(j.name + " " + statusWithTime, 60 * 5);
+                }
             }
             if (nb != null) {
                 styleClasses += " " + nb.status;
@@ -190,6 +193,18 @@
             return article + " " + str;
         }
         return val + " " + str + "s";
+    }
+    function say(words, minIntervalSeconds) {
+        if ('speechSynthesis' in window) {
+            var now = Date.now();
+            var lastTime = window.localStorage.getItem(words);
+            if (lastTime === undefined || (now - lastTime) > (minIntervalSeconds * 1000)) {
+                window.speechSynthesis.speak(new SpeechSynthesisUtterance(words));
+                window.localStorage.setItem(words, now);
+            }
+        } else {
+            console.log("Couldn't say '" + words + "' because no speechSynthesis");
+        }
     }
     window.onload = function() {
         concourse.onAuthError = onAuthFailure;
