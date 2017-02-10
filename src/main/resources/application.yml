@@ -14,12 +14,12 @@ zuul:
 server.port: 1313
 
 logging:
-  level:
-    com.netflix.zuul: DEBUG
-    org:
-      springframework:
-        web: DEBUG
-        http: DEBUG
-        cloud:
-          netflix:
-            zuul: DEBUG
+  level: WARN
+#    com.netflix.zuul: DEBUG
+#    org:
+#      springframework:
+#        web: DEBUG
+#        http: DEBUG
+#        cloud:
+#          netflix:
+#            zuul: DEBUG
