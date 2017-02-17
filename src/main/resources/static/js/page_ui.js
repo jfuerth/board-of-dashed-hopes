@@ -15,6 +15,15 @@ function onAuthSuccess() {
 function onAuthFailure(reason) {
     showError(reason + " Please log in again.");
     document.getElementById("login").style.display = "block";
+    
+    var failedDiv = document.getElementById("pipelines_failed");
+    failedDiv.innerHTML = "";
+
+    var runningDiv = document.getElementById("pipelines_running");
+    runningDiv.innerHTML = "";
+
+    var successDiv = document.getElementById("pipelines_success");
+    successDiv.innerHTML = "";
 }
 function refreshPipelineView() {
     console.log("Attempting to refresh pipeline view...");
