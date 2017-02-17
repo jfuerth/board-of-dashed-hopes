@@ -91,13 +91,7 @@ div.job h2 {
 
 div.pipeline-container {
   border-radius: 10px;
-  width: 33%;
-  margin-top: 0.3%;
-  margin-bottom: 0.3%;
-  margin-left: 0.3%;
-  float: left;
-  height: 100vh;
-  overflow: auto;
+  margin: 3px;
 }
 
 #pipelines_failed {

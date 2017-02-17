@@ -15,7 +15,7 @@ function onAuthSuccess() {
 function onAuthFailure(reason) {
     showError(reason + " Please log in again.");
     document.getElementById("login").style.display = "block";
-    
+
     var failedDiv = document.getElementById("pipelines_failed");
     failedDiv.innerHTML = "";
 
