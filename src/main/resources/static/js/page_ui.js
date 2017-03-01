@@ -87,17 +87,34 @@ function refreshPipelineView() {
         }
     });
 }
+function beginningOfWeek() {
+    var now = new Date();
+    var firstDay = now.getDate() - now.getDay();
+    return Math.floor(new Date(now.getFullYear(), now.getMonth(), firstDay).valueOf() / 1000);
+}
 function makePipelineDiv(p) {
-    var div = document.createElement("div");
+    let pdiv = document.createElement("div");
     var hasOldJob = false;
 
-    div.id = "pipeline-" + p.name;
-    div.innerHTML = "<h1>" + p.name + "</h1>";
+    pdiv.id = "pipeline-" + p.name;
+
+    let pipelineHeading = document.createElement("div");
+    pipelineHeading.innerHTML = "<h1>" + p.name + "</h1>";
+    pipelineHeading.className = "heading";    
+    pdiv.appendChild(pipelineHeading);
+
+    var hasHealthCheckJob = false;
+    let healthPctSpan = document.createElement("span");
+    healthPctSpan.className = "health-check-pct";
+
+    var hasProdDeployJob = false;
+    let deployCountSpan = document.createElement("span");
+    deployCountSpan.className = "deploy-count";
 
     for (var i = 0; i < p.jobs.length; i++) {
-        let j = p.jobs[i];
-        let fb = j["finished_build"];
-        let nb = j["next_build"];
+        let job = p.jobs[i];
+        let fb = job["finished_build"];
+        let nb = job["next_build"];
 
         let styleClasses = "job";
         let statusWithTime = "Never Ran";
@@ -105,7 +122,7 @@ function makePipelineDiv(p) {
             styleClasses += " " + fb.status;
             statusWithTime = fb.status + " " + relativeTime(new Date(fb["end_time"] * 1000))
             if (fb.status === 'failed') {
-                say(p.name + " " + j.name + " " + statusWithTime, p.name + ":" + j.name, 60 * 60);
+                say(p.name + " " + job.name + " " + statusWithTime, p.name + ":" + job.name, 60 * 60);
             }
         }
         if (nb != null) {
@@ -118,20 +135,47 @@ function makePipelineDiv(p) {
         }
 
         let jdiv = document.createElement("div");
-        jdiv.id = "job-" + p.name + "-" + j.name;
+        jdiv.id = "job-" + p.name + "-" + job.name;
         jdiv.className = styleClasses;
-        jdiv.innerHTML = "<h2>" + j.name + "</h2>" + statusWithTime;
+        jdiv.innerHTML = "<h2>" + job.name + "</h2>" + statusWithTime;
 
-        div.appendChild(jdiv);
+        if (job.name == "health-check") {
+            hasHealthCheckJob = true;
+            concourse.getBuildInfo(p.name, job.name, fb.name, beginningOfWeek(), function(buildInfo) {
+                let successes = buildInfo.statusCount("succeeded");
+                let failures = buildInfo.statusCount("failed");
+                var healthCheckSuccessRate = "?"
+                if (successes + failures > 0) {
+                    healthCheckSuccessRate = Math.floor(100 * successes / (successes + failures));
+                }
+                healthPctSpan.innerText = healthCheckSuccessRate;
+            });
+        } else if (job.name == "manual-deploy-to-prod") {
+            hasProdDeployJob = true;
+            concourse.getBuildInfo(p.name, job.name, fb.name, beginningOfWeek(), function(buildInfo) {
+                let successCount = buildInfo.statusCount("succeeded");
+                deployCountSpan.innerText = "→" + successCount;
+            });
+        }
+
+        pdiv.appendChild(jdiv);
     }
 
     if (hasOldJob) {
-        div.className = "pipeline old";
+        pdiv.className = "pipeline old";
     } else {
-        div.className = "pipeline";
+        pdiv.className = "pipeline";
     }
 
-    return div;
+    if (hasHealthCheckJob) {
+        pipelineHeading.appendChild(healthPctSpan);
+    }
+
+    if (hasProdDeployJob) {
+        pipelineHeading.appendChild(deployCountSpan);
+    }
+
+    return pdiv;
 }
 function relativeTime(then) {
     var now = new Date();
@@ -168,10 +212,10 @@ function pluralize(val, str, article) {
 function say(words, repeatKey, minIntervalSeconds) {
     if ('speechSynthesis' in window) {
         var now = Date.now();
-        var lastTime = window.localStorage.getItem(repeatKey);
+        var lastTime = window.localStorage.getItem("lastSpokenReminder:" + repeatKey);
         if (lastTime === undefined || (now - lastTime) > (minIntervalSeconds * 1000)) {
             window.speechSynthesis.speak(new SpeechSynthesisUtterance(words));
-            window.localStorage.setItem(repeatKey, now);
+            window.localStorage.setItem("lastSpokenReminder:" + repeatKey, now);
         }
     } else {
         console.log("Couldn't say '" + words + "' because no speechSynthesis");
