@@ -79,7 +79,7 @@ function ConcourseClient(base_url) {
 
                         var finishedBuild = job["finished_build"];
                         if (finishedBuild != null) {
-                            if (finishedBuild.status === "failed") {
+                            if (finishedBuild.status === "failed" || finishedBuild.status === "errored") {
                                 newestFailureTime = Math.max(newestFailureTime, finishedBuild["end_time"]);
                             } else if (finishedBuild.status === "succeeded") {
                                 newestSuccessTime = Math.max(newestSuccessTime, finishedBuild["end_time"]);
