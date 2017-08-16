@@ -91,9 +91,10 @@ function ConcourseClient(base_url) {
                             newestRunningTime = Math.max(newestRunningTime, nextBuild["start_time"]);
                         }
                     }
+
                     appendResult({
                         "name": p.name,
-                        "jobs": jobs,
+                        "jobs": self.orderedJobs(jobs),
                         "newestFailureTime": newestFailureTime,
                         "newestRunningTime": newestRunningTime,
                         "newestSuccessTime": newestSuccessTime
@@ -101,5 +102,56 @@ function ConcourseClient(base_url) {
                 });
             }
         });
+    }
+
+    this.orderedJobs = function(jobs) {
+        var nameDepths = {};
+        var parentNames = {};
+        var toPlace = jobs;
+        for (var level = 0; toPlace.length > 0; level++) {
+            var keys = Object.keys(nameDepths);
+            var placeNext = [];
+            toPlace.forEach(function(job) {
+                var passedNames = [];
+                job["inputs"].forEach(function(input) {
+                    if ("passed" in input) {
+                        passedNames = passedNames.concat(input["passed"]);
+                        input["passed"].forEach(function(name) {
+                            parentNames[name] = 1;
+                        });
+                    }
+                });
+
+                var diff = passedNames.filter(function(passedName) { return keys.indexOf(passedName) < 0 });
+                if (diff.length == 0) {
+                    nameDepths[job["name"]] = level;
+                } else {
+                    placeNext.push(job);
+                }
+            });
+            toPlace = placeNext;
+        }
+
+        var jobsByName = {};
+        jobs.forEach(function(job) {
+            jobsByName[job["name"]] = job;
+        });
+
+        var ordered = [];
+        var noChildren = [];
+        for (level = 0; Object.keys(nameDepths).length > 0; level++) {
+            Object.keys(nameDepths).forEach(function(key) {
+                if (nameDepths[key] == level) {
+                    var job = jobsByName[key];
+                    if (job["name"] in parentNames || level > 0) {
+                        ordered.push(job);
+                    } else {
+                        noChildren.push(job);
+                    }
+                    delete nameDepths[key];
+                }
+            });
+        }
+        return ordered.concat(noChildren);
     }
 }
