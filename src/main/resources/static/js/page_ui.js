@@ -83,6 +83,23 @@ function refreshPipelineView() {
             if (p.newestRunningTime === 0 && pdiv === runningDiv) {
                 pdiv = successDiv;
             }
+            for (var j = 0; j < p.jobs.length; j++) {
+                job = p.jobs[j];
+                if (job["inputs"] && p.newestSuccessJobTimes[job["name"]]) {
+                    var jobSuccessTime = p.newestSuccessJobTimes[job["name"]];
+                    var prerequisiteJobs = job["inputs"].map(input => input["passed"]).filter(undef => undef);
+                    if (prerequisiteJobs) {
+                        var prerequisiteJobSuccessTimes = prerequisiteJobs.map(name => p.newestSuccessJobTimes[name]).filter(undef => undef);
+                        if (prerequisiteJobSuccessTimes) {
+                            var latestPrerequisiteJobSuccessTime = prerequisiteJobSuccessTimes.reduce((a, b) => Math.max(a, b), jobSuccessTime);
+                            if (jobSuccessTime < latestPrerequisiteJobSuccessTime) {
+                                pdiv = runningDiv;
+                                break;
+                            }
+                        }
+                    }
+                }
+            }
             pdiv.appendChild(makePipelineDiv(p));
         }
     });
