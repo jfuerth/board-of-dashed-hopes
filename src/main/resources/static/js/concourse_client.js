@@ -74,6 +74,8 @@ function ConcourseClient(base_url) {
                     var newestFailureTime = 0;
                     var newestRunningTime = 0;
                     var newestSuccessTime = 0;
+                    var newestSuccessJobTimes = {};
+
                     for (var i = 0; i < jobs.length; i++) {
                         var job = jobs[i];
 
@@ -83,6 +85,7 @@ function ConcourseClient(base_url) {
                                 newestFailureTime = Math.max(newestFailureTime, finishedBuild["end_time"]);
                             } else if (finishedBuild.status === "succeeded") {
                                 newestSuccessTime = Math.max(newestSuccessTime, finishedBuild["end_time"]);
+                                newestSuccessJobTimes[job["name"]] = finishedBuild["end_time"];
                             }
                         }
 
@@ -97,7 +100,8 @@ function ConcourseClient(base_url) {
                         "jobs": self.orderedJobs(jobs),
                         "newestFailureTime": newestFailureTime,
                         "newestRunningTime": newestRunningTime,
-                        "newestSuccessTime": newestSuccessTime
+                        "newestSuccessTime": newestSuccessTime,
+                        "newestSuccessJobTimes": newestSuccessJobTimes
                     });
                 });
             }
