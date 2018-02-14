@@ -74,6 +74,8 @@ function ConcourseClient(base_url) {
                     var newestFailureTime = 0;
                     var newestRunningTime = 0;
                     var newestSuccessTime = 0;
+                    var newestSuccessJobTimes = {};
+
                     for (var i = 0; i < jobs.length; i++) {
                         var job = jobs[i];
 
@@ -83,6 +85,7 @@ function ConcourseClient(base_url) {
                                 newestFailureTime = Math.max(newestFailureTime, finishedBuild["end_time"]);
                             } else if (finishedBuild.status === "succeeded") {
                                 newestSuccessTime = Math.max(newestSuccessTime, finishedBuild["end_time"]);
+                                newestSuccessJobTimes[job["name"]] = finishedBuild["end_time"];
                             }
                         }
 
@@ -91,62 +94,68 @@ function ConcourseClient(base_url) {
                             newestRunningTime = Math.max(newestRunningTime, nextBuild["start_time"]);
                         }
                     }
+
                     appendResult({
                         "name": p.name,
-                        "jobs": jobs,
+                        "jobs": self.orderedJobs(jobs),
                         "newestFailureTime": newestFailureTime,
                         "newestRunningTime": newestRunningTime,
-                        "newestSuccessTime": newestSuccessTime
+                        "newestSuccessTime": newestSuccessTime,
+                        "newestSuccessJobTimes": newestSuccessJobTimes
                     });
                 });
             }
         });
     }
 
-    this.getBuildInfo = function(pipelineName, jobName, latestKnownBuild, sinceDate, onSuccess) {
-        let buildsUrl = "/api/v1/teams/main/pipelines/" + encodeURIComponent(pipelineName) + "/jobs/" + encodeURIComponent(jobName) + "/builds";
-        let cachedBuildsJson = window.localStorage.getItem(buildsUrl);
-        if (cachedBuildsJson != null) {
-            let cachedBuildInfo = JSON.parse(cachedBuildsJson);
-            if (latestKnownBuild == cachedBuildInfo.lastBuildNumber && sinceDate == cachedBuildInfo.sinceDate) {
+    this.orderedJobs = function(jobs) {
+        var nameDepths = {};
+        var parentNames = {};
+        var toPlace = jobs;
+        for (var level = 0; toPlace.length > 0; level++) {
+            var keys = Object.keys(nameDepths);
+            var placeNext = [];
+            toPlace.forEach(function(job) {
+                var passedNames = [];
+                job["inputs"].forEach(function(input) {
+                    if ("passed" in input) {
+                        passedNames = passedNames.concat(input["passed"]);
+                        input["passed"].forEach(function(name) {
+                            parentNames[name] = 1;
+                        });
+                    }
+                });
 
-                // this isn't recommended, but it's easier than the alternatives.
-                // https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Object/proto
-                cachedBuildInfo.__proto__ = BuildInfo.prototype;
-
-                onSuccess(cachedBuildInfo);
-                return;
-            }
-        }
-        xhrGet(buildsUrl, function(builds) {
-            let statuses = {};
-            for (var i = 0; i < builds.length; i++) {
-                let build = builds[i];
-                if (build.end_time == null) {
-                    continue;
-                }
-                if (build.end_time < sinceDate) {
-                    break;
-                }
-                if (statuses.hasOwnProperty(build.status)) {
-                    statuses[build.status]++;
+                var diff = passedNames.filter(function(passedName) { return keys.indexOf(passedName) < 0 });
+                if (diff.length == 0) {
+                    nameDepths[job["name"]] = level;
                 } else {
-                    statuses[build.status] = 1;
+                    placeNext.push(job);
                 }
-            }
-            let buildInfo = new BuildInfo(statuses, builds[0].name, sinceDate);
-            window.localStorage.setItem(buildsUrl, JSON.stringify(buildInfo));
-            onSuccess(buildInfo);
+            });
+            toPlace = placeNext;
+        }
+
+        var jobsByName = {};
+        jobs.forEach(function(job) {
+            jobsByName[job["name"]] = job;
         });
+
+        var ordered = [];
+        var noChildren = [];
+        for (level = 0; Object.keys(nameDepths).length > 0; level++) {
+            Object.keys(nameDepths).forEach(function(key) {
+                if (nameDepths[key] == level) {
+                    var job = jobsByName[key];
+                    if (job["name"] in parentNames || level > 0) {
+                        ordered.push(job);
+                    } else {
+                        noChildren.push(job);
+                    }
+                    delete nameDepths[key];
+                }
+            });
+        }
+        return ordered.concat(noChildren);
     }
-}
-
-function BuildInfo(statuses, lastBuildNumber, sinceDate) {
-    this.statuses = statuses;
-    this.lastBuildNumber = lastBuildNumber;
-    this.sinceDate = sinceDate;
-
-}
-BuildInfo.prototype.statusCount = function(status) {
-    return this.statuses[status] == null ? 0 : this.statuses[status];
 }
