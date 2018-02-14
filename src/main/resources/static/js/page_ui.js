@@ -74,9 +74,10 @@ function refreshPipelineView() {
         var successDiv = document.getElementById("pipelines_success");
         successDiv.innerHTML = "";
 
-        var pdiv = failedDiv;
         for (var i = 0; i < pipelines.length; i++) {
+            var pdiv = failedDiv;
             var p = pipelines[i];
+
             if (p.newestFailureTime === 0 && pdiv === failedDiv) {
                 pdiv = runningDiv;
             }
