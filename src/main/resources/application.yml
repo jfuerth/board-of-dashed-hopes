@@ -4,7 +4,7 @@ zuul:
       path: /concourse/**
 
       # replace this with your concourse URL
-      url: https://ci.concourse.ci/
+      url: https://ci.concourse-ci.org/
 
       sensitiveHeaders: ""
       stripPrefix: true

@@ -40,6 +40,13 @@ function ConcourseClient(base_url) {
         xhr.send();
     }
 
+    function groupBy(xs, key) {
+        return xs.reduce(function(rv, x) {
+            (rv[x[key]] = rv[x[key]] || []).push(x);
+            return rv;
+        }, {});
+    }
+
     this.auth = function(username, password, onSuccess) {
         var token = "Basic " + btoa(username + ":" + password);
         xhrGetWithHeaders("/api/v1/teams/main/auth/token", {"Authorization": token}, function(responseJson) {
@@ -50,63 +57,59 @@ function ConcourseClient(base_url) {
     }
 
     this.getPipelines = function(onSuccess) {
-        xhrGet("/api/v1/pipelines", function(pipelines) {
-            if (pipelines.length == 0) {
-                self.onAuthError("No pipelines found.")
+        xhrGet("/api/v1/jobs", function(jobsResponse) {
+            if (jobsResponse.length === 0) {
+                self.onAuthError("No jobs found.")
                 return;
             }
 
-            pipelines = pipelines.filter(function(p) { return !p.paused; });
+            var jobsByPipeline = groupBy(jobsResponse, "pipeline_name");
 
             var result = [];
-            function appendResult(pipelineResult) {
-                result.push(pipelineResult);
-                if (result.length === pipelines.length) {
-                    onSuccess(result);
+            for (var pipeline in jobsByPipeline) {
+                if (!jobsByPipeline.hasOwnProperty(pipeline)) {
+                    continue;
                 }
-            }
 
-            for (var i = 0; i < pipelines.length; i++) {
-                let p = pipelines[i];
-                if (p.paused) { continue; }
+                var newestFailureTime = 0;
+                var newestRunningTime = 0;
+                var newestSuccessTime = 0;
+                var newestSuccessJobTimes = {};
 
-                xhrGet("/api/v1/teams/main/pipelines/" + encodeURIComponent(p.name) + "/jobs", function(jobs) {
-                    var newestFailureTime = 0;
-                    var newestRunningTime = 0;
-                    var newestSuccessTime = 0;
-                    var newestSuccessJobTimes = {};
+                var jobs = jobsByPipeline[pipeline];
+                console.log("Examining", jobs.length, "jobs in", pipeline);
+                for (var i = 0; i < jobs.length; i++) {
+                    var job = jobs[i];
 
-                    for (var i = 0; i < jobs.length; i++) {
-                        var job = jobs[i];
-
-                        var finishedBuild = job["finished_build"];
-                        if (finishedBuild != null) {
-                            if (finishedBuild.status === "failed" || finishedBuild.status === "errored") {
-                                newestFailureTime = Math.max(newestFailureTime, finishedBuild["end_time"]);
-                            } else if (finishedBuild.status === "succeeded") {
-                                newestSuccessTime = Math.max(newestSuccessTime, finishedBuild["end_time"]);
-                                newestSuccessJobTimes[job["name"]] = finishedBuild["end_time"];
-                            }
-                        }
-
-                        var nextBuild = job["next_build"];
-                        if (nextBuild != null) {
-                            newestRunningTime = Math.max(newestRunningTime, nextBuild["start_time"]);
+                    var finishedBuild = job["finished_build"];
+                    if (finishedBuild != null) {
+                        if (finishedBuild.status === "failed" || finishedBuild.status === "errored") {
+                            newestFailureTime = Math.max(newestFailureTime, finishedBuild["end_time"]);
+                        } else if (finishedBuild.status === "succeeded") {
+                            newestSuccessTime = Math.max(newestSuccessTime, finishedBuild["end_time"]);
+                            newestSuccessJobTimes[job["name"]] = finishedBuild["end_time"];
                         }
                     }
 
-                    appendResult({
-                        "name": p.name,
-                        "jobs": self.orderedJobs(jobs),
-                        "newestFailureTime": newestFailureTime,
-                        "newestRunningTime": newestRunningTime,
-                        "newestSuccessTime": newestSuccessTime,
-                        "newestSuccessJobTimes": newestSuccessJobTimes
-                    });
+                    var nextBuild = job["next_build"];
+                    if (nextBuild != null) {
+                        newestRunningTime = Math.max(newestRunningTime, nextBuild["start_time"]);
+                    }
+                }
+
+                result.push({
+                    "name": pipeline,
+                    "jobs": self.orderedJobs(jobs),
+                    "newestFailureTime": newestFailureTime,
+                    "newestRunningTime": newestRunningTime,
+                    "newestSuccessTime": newestSuccessTime,
+                    "newestSuccessJobTimes": newestSuccessJobTimes
                 });
             }
+            console.log("Sending pipeline statuses to UI", result);
+            onSuccess(result);
         });
-    }
+    };
 
     this.orderedJobs = function(jobs) {
         var nameDepths = {};
