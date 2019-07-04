@@ -1,10 +1,21 @@
 zuul:
+  host:
+    connect-timeout-millis: 5000
+    socket-timeout-millis: 30000
   routes:
     concourse:
       path: /concourse/**
 
-      # replace this with your concourse URL
+      # replace this with your Concourse URL
       url: https://ci.concourse-ci.org/
+
+      sensitiveHeaders: ""
+      stripPrefix: true
+    jenkins:
+      path: /jenkins/**
+
+      # replace this with your Jenkins URL
+      url: https://jenkins.example.com/
 
       sensitiveHeaders: ""
       stripPrefix: true

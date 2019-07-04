@@ -27,7 +27,7 @@ function onAuthFailure(reason) {
 }
 function refreshPipelineView() {
     console.log("Attempting to refresh pipeline view...");
-    concourse.getPipelines(function(pipelines) {
+    ciSystem.getPipelines(function(pipelines) {
         console.log("Got fresh pipeline data. Refreshing UI...");
         clearErrors();
 
@@ -132,7 +132,7 @@ function makePipelineDiv(p) {
             statusWithTime = nb.status + " " + relativeTime(new Date(nb["start_time"] * 1000))
         }
 
-        if (statusWithTime.indexOf("weeks") != -1) {
+        if (statusWithTime.indexOf("weeks") !== -1) {
             hasOldJob = true;
         }
 

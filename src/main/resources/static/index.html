@@ -19,7 +19,7 @@
         <span class="prompt">Password:</span><br>
         <input type="password" name="password"><br>
 
-        <input type="button" value="Log in" onclick="concourse.auth(this.form.username.value, this.form.password.value, onAuthSuccess)">
+        <input type="button" value="Log in" onclick="ciSystem.auth(this.form.username.value, this.form.password.value, onAuthSuccess)">
     </form>
 </div>
 
@@ -34,18 +34,20 @@
 </div>
 
 
-<script type="application/javascript" src="js/concourse_client.js"></script>
+<!--<script type="application/javascript" src="js/concourse_client.js"></script>-->
+<script type="application/javascript" src="js/jenkins_client.js"></script>
 <script type="application/javascript" src="js/page_ui.js"></script>
 <script type="application/javascript">
     window.onload = function() {
-        concourse.onAuthError = onAuthFailure;
+        ciSystem.onAuthError = onAuthFailure;
         var periodicRefresh = function() {
             refreshPipelineView();
             setTimeout(periodicRefresh, 5000);
-        }
+        };
         periodicRefresh();
-    }
-    var concourse = new ConcourseClient("/concourse");
+    };
+    // var ciSystem = new ConcourseClient("/concourse");
+    var ciSystem = new JenkinsClient("/jenkins");
 </script>
 
 </body>

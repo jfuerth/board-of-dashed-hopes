@@ -99,7 +99,7 @@ function ConcourseClient(base_url) {
 
                 result.push({
                     "name": pipeline,
-                    "jobs": self.orderedJobs(jobs),
+                    "jobs": orderedJobs(jobs),
                     "newestFailureTime": newestFailureTime,
                     "newestRunningTime": newestRunningTime,
                     "newestSuccessTime": newestSuccessTime,
@@ -111,7 +111,7 @@ function ConcourseClient(base_url) {
         });
     };
 
-    this.orderedJobs = function(jobs) {
+    function orderedJobs(jobs) {
         var nameDepths = {};
         var parentNames = {};
         var toPlace = jobs;
@@ -130,7 +130,7 @@ function ConcourseClient(base_url) {
                 });
 
                 var diff = passedNames.filter(function(passedName) { return keys.indexOf(passedName) < 0 });
-                if (diff.length == 0) {
+                if (diff.length === 0) {
                     nameDepths[job["name"]] = level;
                 } else {
                     placeNext.push(job);
