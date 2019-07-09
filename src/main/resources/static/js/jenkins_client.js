@@ -76,10 +76,10 @@ function JenkinsClient(base_url) {
     };
 
     this.getPipelines = function(onSuccess) {
-        xhrGet("/view/All%20CD%20Pipelines/api/json?depth=1&tree=jobs[fullName,url,downstreamProjects[fullName],lastBuild[url,number,duration,timestamp,result,changeSet[items[msg,author[fullName]]]]]", function(viewResponse) {
+        xhrGet("/view/All%20CD%20Pipelines/api/json?tree=jobs[fullName,url,downstreamProjects[fullName],builds[url,number,result,timestamp,duration]]", function(viewResponse) {
             var jobsResponse = viewResponse.jobs;
             if (jobsResponse.length === 0) {
-                self.onAuthError("No jobs found.")
+                self.onAuthError("No jobs found.");
                 return;
             }
 
@@ -107,7 +107,7 @@ function JenkinsClient(base_url) {
                 for (var i = 0; i < jobs.length; i++) {
                     var job = jobs[i];
 
-                    var finishedBuild = job["lastBuild"];
+                    var finishedBuild = latestFinishedBuild(job);
                     if (finishedBuild != null) {
                         if (finishedBuild.result === "FAILURE") {
                             newestFailureTime = Math.max(newestFailureTime, finishedBuild["timestamp"]);
@@ -117,9 +117,9 @@ function JenkinsClient(base_url) {
                         }
                     }
 
-                    var nextBuild = job["next_build"];
-                    if (nextBuild != null) {
-                        newestRunningTime = Math.max(newestRunningTime, nextBuild["start_time"]);
+                    var nxtBuild = nextBuild(job);
+                    if (nxtBuild != null) {
+                        newestRunningTime = Math.max(newestRunningTime, nxtBuild["timestamp"]);
                     }
                 }
 
@@ -136,6 +136,41 @@ function JenkinsClient(base_url) {
             onSuccess(result);
         });
     };
+
+    /**
+     * Returns the newest build of the job which is not currently running.
+     *
+     * @param job the Jenkins job from the server response.
+     * @returns {null|*} The build object of the latest completed build. If the job has no completed builds,
+     * returns null.
+     */
+    function latestFinishedBuild(job) {
+        for (var i = 0; i < job["builds"].length; i++) {
+            var build = job["builds"][i];
+            if (build["duration"] > 0) {
+                return build;
+            }
+        }
+        return null;
+    }
+
+    /**
+     * Returns the build of the given job that is currently running.
+     *
+     * @param job the Jenkins job from the server response.
+     * @returns {null|*} The build object of the currently running build. If the job has no running build,
+     * returns null.
+     */
+    function nextBuild(job) {
+        if (job["builds"].length === 0) {
+            return null;
+        }
+        var build = job["builds"][0];
+        if (build["duration"] === 0) {
+            return build;
+        }
+        return null;
+    }
 
     function orderedJobs(jobs) {
         var L = [];
@@ -182,10 +217,8 @@ function JenkinsClient(base_url) {
         var nameParts = parseJobFullName(jj["fullName"]);
         return {
             name: nameParts.environment + " " + nameParts.stage,
-            finished_build: jenkinsBuildToUiBuild(jj["lastBuild"])
-            // TODO: if job is running now, finished_build should be the latest completed build
-            // and next_build should be the running one
-            // uiJob["next_build"] = jenkinsBuildToUiBuild(jj["???"]);
+            finished_build: jenkinsBuildToUiBuild(latestFinishedBuild(jj)),
+            next_build: jenkinsBuildToUiBuild(nextBuild(jj))
         }
     }
 
