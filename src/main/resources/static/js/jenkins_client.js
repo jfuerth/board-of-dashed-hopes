@@ -76,7 +76,7 @@ function JenkinsClient(base_url) {
     };
 
     this.getPipelines = function(onSuccess) {
-        xhrGet("/view/All%20CD%20Pipelines/api/json?tree=jobs[fullName,url,downstreamProjects[fullName],builds[url,number,result,timestamp,duration]]", function(viewResponse) {
+        xhrGet("/view/All%20CD%20Pipelines/api/json?tree=jobs[fullName,url,color,downstreamProjects[fullName],builds[url,number,result,timestamp,duration]]", function(viewResponse) {
             var jobsResponse = viewResponse.jobs;
             if (jobsResponse.length === 0) {
                 self.onAuthError("No jobs found.");
@@ -106,6 +106,10 @@ function JenkinsClient(base_url) {
                 console.log("Examining", jobs.length, "jobs in", pipeline, jobs);
                 for (var i = 0; i < jobs.length; i++) {
                     var job = jobs[i];
+
+                    if (job.color === "disabled") {
+                        continue;
+                    }
 
                     var finishedBuild = latestFinishedBuild(job);
                     if (finishedBuild != null) {
@@ -217,6 +221,7 @@ function JenkinsClient(base_url) {
         var nameParts = parseJobFullName(jj["fullName"]);
         return {
             name: nameParts.environment + " " + nameParts.stage,
+            enabled: jj.color !== "disabled",
             finished_build: jenkinsBuildToUiBuild(latestFinishedBuild(jj)),
             next_build: jenkinsBuildToUiBuild(nextBuild(jj))
         }

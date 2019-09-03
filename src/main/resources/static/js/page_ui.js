@@ -131,6 +131,9 @@ function makePipelineDiv(p) {
             styleClasses += " " + nb.status;
             statusWithTime = nb.status + " " + relativeTime(new Date(nb["start_time"] * 1000))
         }
+        if (!j.enabled) {
+            styleClasses += " disabled";
+        }
 
         if (statusWithTime.indexOf("weeks") !== -1) {
             hasOldJob = true;
